@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Lyftron Demo</title>
+</head>
+<body>
+<form action="#" method="post">
+    <input type="text" name="query" style="height:100px;width:1000px;">
+    <button value="submit" style="height:50px;width:100px;">Click Me To Fetch</button>
+
+</form>
+<table border="1" class="dataframe">
+    <thead>
+    <tr style="text-align: right;">
+        <th></th>
+        <th></th>
+        <th></th>
+        <th></th>
+        <th></th>
+    </tr>
+    <tr>
+        {% for t in content %}
+        {% for i in t%}
+        <th style="background-color:blue;color:white;">{{i}}</th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr>
+        <th>{{t[i]}}</th>
+    </tr>
+    </tbody>
+
+    {% endfor %}
+    {% endfor %}
+</table>
+
+</body>
+</html>

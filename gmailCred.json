@@ -1,0 +1,14 @@
+{
+  "installed": {
+    "client_id": "57537185199-qq14s3d9tsefearglmspg2djvkg1s5ae.apps.googleusercontent.com",
+    "project_id": "lyftron-1605104661611",
+    "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+    "token_uri": "https://oauth2.googleapis.com/token",
+    "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+    "client_secret": "WsSG2FAavZzVpIDkvDpSdd6-",
+    "redirect_uris": [
+      "urn:ietf:wg:oauth:2.0:oob",
+      "http://localhost"
+    ]
+  }
+}
