@@ -7,19 +7,20 @@ data = []
 gs = None
 
 
-def initialize():
+def initialize(jsonPath, spreadsheetName):
     scope = ["https://spreadsheets.google.com/feeds", 'https://www.googleapis.com/auth/spreadsheets',
              "https://www.googleapis.com/auth/drive.file", "https://www.googleapis.com/auth/drive"]
     Creds = ServiceAccountCredentials.from_json_keyfile_name(
-        "creds.json", scope)
+        jsonPath, scope)
     client = gspread.authorize(Creds)
-    return client.open("Lyftron")
-
-    # data = sheet.get_all_records()
-    # 1st row of all sheets stored in this e.g column names stored in this
+    return client.open(spreadsheetName)
 
 
-gs = initialize()  # activate all sheet methods from here
+# data = sheet.get_all_records()
+# 1st row of all sheets stored in this e.g column names stored in this
+
+
+gs = initialize("creds.json", "Lyftron")  # activate all sheet methods from here
 filtered_dict = []
 
 
@@ -112,85 +113,56 @@ def makeTable():
 # makeTable()
 
 dt = makeSchema()
+print(dt)
 
 lookUp = makeLookup()
 
 
-def filterData(table, columns, value):
-    if isinstance(columns, list) & isinstance(value, list):
-        for col in columns:
-            arrIndex = (lookUp[len(lookUp) - 1].index(table))
-            colIndex = lookUp[arrIndex].index(col) + 1
-            c = gs.worksheet(table).findall(
-                value[columns.index(col)], None, colIndex)
-            for s in c:
-                print(gs.worksheet(table).row_values(s.row))
-    elif isinstance(value, list):
-        arrIndex = (lookUp[len(lookUp) - 1].index(table))
-        colIndex = lookUp[arrIndex].index(columns) + 1
+def filterData(table, columns, value, displayValues):
+    # if len(columns)>1 & len(value)>1:
+    results = []
+    arrIndex = (lookUp[len(lookUp) - 1].index(table))
+
+    for col in columns:
+        colIndex = lookUp[arrIndex].index(col) + 1
         c = gs.worksheet(table).findall(
-            value[columns.index(columns)], None, colIndex)
+            value[columns.index(col)], None, colIndex)
         for s in c:
-            print(gs.worksheet(table).row_values(s.row))
-    elif isinstance(columns, list):
-        for col in columns:
-            arrIndex = (lookUp[len(lookUp) - 1].index(table))
-            colIndex = lookUp[arrIndex].index(col) + 1
-            c = gs.worksheet(table).findall(
-                value, None, colIndex)
-            for s in c:
-                print(gs.worksheet(table).row_values(s.row))
+            results.append(gs.worksheet(table).row_values(s.row))
+
+    if displayValues == '*':
+        for res in results:
+            print(res)
     else:
-        arrIndex = (lookUp[len(lookUp) - 1].index(table))
-        colIndex = lookUp[arrIndex].index(columns) + 1
-        c = gs.worksheet(table).findall(
-            value, None, colIndex)
-        for s in c:
-            print(gs.worksheet(table).row_values(s.row))
-    # print(lookUp)
-    """
-    dict = [d for d in data if d[col] == value]
-
-    if len(columns) < 1:
-        return dict
-    for c in columns:
-        for d in dict:
-            filtered_dict.append(d[c])
-
-    return filtered_dict
-    # filtered_dict = [d[c] for d in dict]
-
-    #    df = pd.DataFrame(filtered_dict)
-    #    dfg = df.groupby(
-    #        ['Keyword', 'Min search volume', 'Max search volume', 'Competition', 'Competition (indexed value)']).sum()
-    #    dfg.to_html('result.html');
-
-    # df = pd.DataFrame(filtered_dict)
-    # dfg = df.groupby(['Keyword']).sum()
-    #    Table = []
-    #    for key, value in df.iteritems():  # or .items() in Python 3
-    #        temp = []
-    #        temp.extend([key, value])  # Note that this will change depending on the structure of your dictionary
-    #        Table.append(temp)
-    #     return filtered_dict
-"""
+        for res in results:
+            for col in displayValues:
+                colIndex = lookUp[arrIndex].index(col)
+                print(res[colIndex])
 
 
-# filterData('S1', ['Keyword', 'Competition (indexed value)'],
-#          ['bookkeeping', '31'])
+def updateData(table, columns, value, updValues):
+    arrIndex = (lookUp[len(lookUp) - 1].index(table))
+    matches = []
+
+    for col in columns:
+        colIndex = lookUp[arrIndex].index(col) + 1
+        matches = gs.worksheet(table).findall(
+            value[columns.index(col)], None, colIndex)
+    for i, value in enumerate(updValues):
+        matches[i].value = value
+    gs.worksheet(table).update_cells(matches)
 
 
-def updateData(updateCol, updateValue, col, value):
-    colIndex = (
-            (next((d for d, i in enumerate(data) if updateCol in i), None)) + 1)
-    valueIndex = (next((d for d, i in enumerate(data)
-                        if updateValue in i.values()), None)) + 2
+def deleteData(table, columns, value):
+    arrIndex = (lookUp[len(lookUp) - 1].index(table))
+    matches = []
 
-
-def deleteData(updateValue):
-    delIndex = (next((d for d, i in enumerate(data)
-                      if updateValue in i.values()), None)) + 2
-
+    for col in columns:
+        colIndex = lookUp[arrIndex].index(col) + 1
+        matches = gs.worksheet(table).findall(
+            value[columns.index(col)], None, colIndex)
+    for match in reversed(matches):
+        gs.worksheet(table).delete_row(match.row)
     # return gs.delete_row(delIndex)
 
 # pprint (d for d in data if d['Min search volume'] > 10)

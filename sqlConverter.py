@@ -1,4 +1,5 @@
 import sheets
+import re
 
 slct = 'select'
 updt = 'update'
@@ -7,38 +8,59 @@ dlte = 'delete'
 
 def queryMaker(query):
     commands = query.split()
-    table = query.split('from ', maxsplit=1)[1]
-    table = table.split()
-    columnsPart = query.split('where ')[1]
-    columns = columnsPart.rsplit('and')
     col = []
     values = []
-    for c in columns:
-        col = c.split('=')[0]
-        values = c.split('=')[1]
-
-    if ("*" not in commands[1]):
-        # print()
-        sheets.filterData(table[0], col, values)
-    # print(columns)
 
     if (commands[0].lower() == slct.lower()):
-        print()
-    # print(sheets.filterData(table, colClause[1], columns))
+        columnsPart = query.split('where ')[1]
+        columns = columnsPart.rsplit(' or ')
+        displayValues = query.split(',')
+        table = query.split('from ', maxsplit=1)[1]
+        table = table.split()
+
+        displayValues[0] = re.sub('select ', '', displayValues[0], flags=re.IGNORECASE)
+        displayValues[len(displayValues) - 1] = displayValues[len(displayValues) - 1].split(' from')[0]
+
+        for c in columns:
+            col.append(c.split('=')[0])
+            values.append(c.split('=')[1])
+        if ("*" in commands[1]):
+            # print()
+            displayValues = '*'
+            sheets.filterData(table[0], col, values, displayValues)
+        else:
+            print()
+            sheets.filterData(table[0], col, values, displayValues)
 
     elif (commands[0].lower() == updt.lower()):
-        updValues = commands[3].rsplit('=')
-        colClause = commands[len(commands) - 1].rsplit('=')
-    # print( sheets.updateData(colClause[0], colClause[1], updValues[0], updValues[1]))
+        table = query.split(' SET', maxsplit=1)[0]
+        table = re.sub('update ', '', table, flags=re.IGNORECASE)
+        columnsPart = query.split('WHERE ')[1]
+        columns = columnsPart.rsplit(' or ')
+        updValues = query.split(',')
+        updValues[0] = (re.sub('Update '+table+' set ', '', updValues[0], flags=re.IGNORECASE)).split('=')[1]
+        updValues[len(updValues) - 1] = (updValues[len(updValues) - 1].split(' WHERE')[0]).split('=')[1]
+
+        for c in columns:
+            col.append(c.split('=')[0])
+            values.append(c.split('=')[1])
+        sheets.updateData(table, col, values,updValues)
 
     elif (commands[0].lower() == dlte.lower()):
-        colClause = commands[len(commands) - 1].rsplit('=')
+        columnsPart = query.split('where ')[1]
+        columns = columnsPart.rsplit(' or ')
+        table = query.split('from ', maxsplit=1)[1]
+        table = table.split()
+        for c in columns:
+            col.append(c.split('=')[0])
+            values.append(c.split('=')[1])
+        sheets.deleteData(table[0], col, values)
+
+        # print( sheets.deleteData(colClause[1]))
 
 
-# print( sheets.deleteData(colClause[1]))
-
-
-queryMaker('select keyword from S1 where Keyword=bookkeeping')
+#queryMaker('UPDATE S1 SET Keyword=bookkeeping WHERE Keyword=Keyword')
+queryMaker('select * from S1 where Keyword=High')
 
 # lst = [("select keyword"),("bb8"),("ccc8"),("dddddd8")]
 
