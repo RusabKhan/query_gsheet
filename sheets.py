@@ -2,25 +2,24 @@ import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 from dateutil.parser import parse
 import pandas as pd
+pd.set_option('display.max_rows', 500)
+pd.set_option('display.max_columns', 500)
+pd.set_option('display.width', 1000)
 
 data = []
 gs = None
 
 
-def initialize(jsonPath, spreadsheetName):
+def initialize(spreadsheetName):
     scope = ["https://spreadsheets.google.com/feeds", 'https://www.googleapis.com/auth/spreadsheets',
              "https://www.googleapis.com/auth/drive.file", "https://www.googleapis.com/auth/drive"]
     Creds = ServiceAccountCredentials.from_json_keyfile_name(
-        jsonPath, scope)
+        "creds.json", scope)
     client = gspread.authorize(Creds)
     return client.open(spreadsheetName)
 
 
-# data = sheet.get_all_records()
-# 1st row of all sheets stored in this e.g column names stored in this
-
-
-gs = initialize("creds.json", "Lyftron")  # activate all sheet methods from here
+gs = initialize("Lyftron")  # activate all sheet methods from here
 filtered_dict = []
 
 
@@ -47,10 +46,6 @@ def makeLookup():
     lookUp.append(sheets)
     return lookUp
 
-
-# print(gs.worksheet('S1').col_values(1).__contains__('bookkeeping'))
-# print(gs.worksheet('S1').col_values(2).__contains__('bookkeeping'))
-# print(gs.worksheet('S1').col_values(5).__contains__('31'))
 
 def checkDtype(table, headers):
     digit = 0
@@ -110,10 +105,7 @@ def makeTable():
     print(table)
 
 
-# makeTable()
-
 dt = makeSchema()
-print(dt)
 
 lookUp = makeLookup()
 
@@ -121,23 +113,34 @@ lookUp = makeLookup()
 def filterData(table, columns, value, displayValues):
     # if len(columns)>1 & len(value)>1:
     results = []
+    resultSet = []
+    headers = []
     arrIndex = (lookUp[len(lookUp) - 1].index(table))
 
-    for col in columns:
-        colIndex = lookUp[arrIndex].index(col) + 1
-        c = gs.worksheet(table).findall(
-            value[columns.index(col)], None, colIndex)
-        for s in c:
-            results.append(gs.worksheet(table).row_values(s.row))
+    if (len(columns) > 0):
+        for col in columns:
+            colIndex = lookUp[arrIndex].index(col) + 1
+            c = gs.worksheet(table).findall(
+                value[columns.index(col)], None, colIndex)
+            for s in c:
+                results.append(gs.worksheet(table).row_values(s.row))
+    else:
+        results = gs.worksheet(table).get_all_values()
 
-    if displayValues == '*':
+    if displayValues == '*' and len(columns) > 0:
         for res in results:
-            print(res)
+            print(pd.DataFrame([res], columns=lookUp[arrIndex]))
+
+    elif displayValues == '*' and len(columns) == 0:
+        print(pd.DataFrame(results))
+        
     else:
         for res in results:
             for col in displayValues:
                 colIndex = lookUp[arrIndex].index(col)
-                print(res[colIndex])
+                resultSet.append(res[colIndex])
+                headers.append(lookUp[arrIndex][colIndex])
+        print(pd.DataFrame([resultSet], columns=headers))
 
 
 def updateData(table, columns, value, updValues):
@@ -164,6 +167,3 @@ def deleteData(table, columns, value):
     for match in reversed(matches):
         gs.worksheet(table).delete_row(match.row)
     # return gs.delete_row(delIndex)
-
-# pprint (d for d in data if d['Min search volume'] > 10)
-# pprint(filtered_dict)
